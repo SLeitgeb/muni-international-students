@@ -61,13 +61,15 @@ const states10m = L.geoJSON(null, {
 states10m.min_zoom = ZOOM_THRESHOLD + 1;
 statesLayer.addLayer(states10m);
 
+function loadTopoToLayer(topology, layer) {
+  const geojson = topojson.feature(topology, topology.objects.countries);
+  layer.addData(geojson);
+  addLayerInteraction(layer);
+}
+
 fetch(states50mSource)
   .then(response => response.json())
-  .then(topology => {
-    const geojson = topojson.feature(topology, topology.objects['50m']);
-    states50m.addData(geojson);
-    addLayerInteraction(states50m);
-  });
+  .then(topology => loadTopoToLayer(topology, states50m));
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
@@ -75,10 +77,8 @@ function zoomHandler() {
   map.off('zoomend', zoomHandler);
   fetch(states10mSource)
     .then(response => response.json())
-    .then(topology => {
-      const geojson = topojson.feature(topology, topology.objects['10m']);
-      states10m.addData(geojson);
-      addLayerInteraction(states10m);
+    .then(topology => loadTopoToLayer(topology, states10m))
+    .then(() => {
       states50m.max_zoom = ZOOM_THRESHOLD;
       statesLayer.filter();
     });

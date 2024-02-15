@@ -29,12 +29,12 @@ data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data
 	> $@
 
 data/50m.topojson: data/aux/50m.geojson
-	@geo2topo -q 1e4 $< |\
+	@geo2topo -q 1e4 countries=$< |\
 	toposimplify -s 1e-7 \
 	> $@
 
 data/10m.topojson: data/aux/10m.geojson
-	@geo2topo -q 1e5 $< |\
+	@geo2topo -q 1e5 countries=$< |\
 	toposimplify -s 1e-7 \
 	> $@
 
