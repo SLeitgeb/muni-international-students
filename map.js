@@ -1,9 +1,9 @@
 /* eslint-disable space-before-function-paren */
-/* global L ZoomShowHide */
+/* global L topojson ZoomShowHide */
 'use strict';
 
-const states50mSource = 'data/50m_units_students.geojson';
-const states10mSource = 'data/10m_units_students.geojson';
+const states50mSource = 'data/50m.topojson';
+const states10mSource = 'data/10m.topojson';
 
 const studentsCountAttr = 'all';
 
@@ -62,15 +62,17 @@ statesLayer.addLayer(states10m);
 
 fetch(states50mSource)
   .then(response => response.json())
-  .then(data => {
-    states50m.addData(data);
+  .then(topology => {
+    const geojson = topojson.feature(topology, topology.objects['50m']);
+    states50m.addData(geojson);
     addLayerInteraction(states50m);
   });
 
 fetch(states10mSource)
   .then(response => response.json())
-  .then(data => {
-    states10m.addData(data);
+  .then(topology => {
+    const geojson = topojson.feature(topology, topology.objects['10m']);
+    states10m.addData(geojson);
     addLayerInteraction(states10m);
   });
 

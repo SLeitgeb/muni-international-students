@@ -6,14 +6,15 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
-TARGETS := data/2024-01_citizenship.csv data/50m_units.geojson data/10m_units.geojson
+STUDENT_DATA := data/aux/2024-01_citizenship.csv 
+TARGETS := data/50m.topojson data/10m.topojson
 
 all: $(TARGETS)
 
 data data/aux:
 	@[ -d $@ ] || mkdir -p $@
 
-data/%.csv: data/%.xlsx data/is_czso_join.csv | data
+data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data
 	@csvjoin --left --columns citizenship,is_text \
 		<(cat \
 			<(echo "citizenship,all,phd") \
@@ -23,15 +24,27 @@ data/%.csv: data/%.xlsx data/is_czso_join.csv | data
 			| csvcut --columns "Občanství,Počet studentů,Počet PhD studentů" \
 			| tail +2) \
 		| csvgrep --columns citizenship --invert-match --regex ^Celkem$$) \
-		data/is_czso_join.csv | csvcut -c ISO_A2,all,phd \
+		data/is_czso_join.csv \
+	| csvcut -c ISO_A2,all,phd \
 	> $@
 
-data/%_units.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv
+data/50m.topojson: data/aux/50m.geojson
+	@geo2topo -q 1e4 $< |\
+	toposimplify -s 1e-7 \
+	> $@
+
+data/10m.topojson: data/aux/10m.geojson
+	@geo2topo -q 1e5 $< |\
+	toposimplify -s 1e-7 \
+	> $@
+
+data/aux/%.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv $(STUDENT_DATA)
 	@mapshaper $< \
 		-dissolve fields=ISO_A2_EH where='ISO_A2_EH != -99' copy-fields=NAME \
 		-join data/iso_norm_names.csv keys=ISO_A2_EH,ISO_A2_EH \
 		-each 'NAME = NAME_NORM || NAME' \
-		-filter-fields ISO_A2_EH,NAME \
+		-join $(STUDENT_DATA) keys=ISO_A2_EH,ISO_A2 \
+		-filter-fields ISO_A2_EH,NAME,all,phd \
 		-rename-fields ISO_A2=ISO_A2_EH \
 		-o $@
 
