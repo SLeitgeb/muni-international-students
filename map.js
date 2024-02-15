@@ -1,16 +1,13 @@
-/* global L */
+/* eslint-disable space-before-function-paren */
+/* global L ZoomShowHide */
 'use strict';
 
-const proxyurl = '';
-const dataurl = '';
-
-// Data files for different zoom levels
-const lowZoomStates = '50m_units_students.geojson';
-const highZoomStates = '10m_units_students.geojson';
+const states50mSource = 'data/50m_units_students.geojson';
+const states10mSource = 'data/10m_units_students.geojson';
 
 const studentsCountAttr = 'all';
 
-function getColor (d) {
+function getColor(d) {
   /* eslint multiline-ternary: off */
   /* eslint operator-linebreak: off */
   /* eslint indent: off */
@@ -35,7 +32,7 @@ L.control.scale({ imperial: false, maxwidth: 200 }).addTo(map);
 
 // Legend
 const legend = L.control({ position: 'bottomright' });
-legend.onAdd = function () {
+legend.onAdd = function() {
   const div = L.DomUtil.create('div', 'info legend');
   const grades = [0, 10, 30, 100];
   div.innerHTML += '<h4>Number of students</h4>';
@@ -47,75 +44,78 @@ legend.onAdd = function () {
   }
   return div;
 };
-
 legend.addTo(map);
 
-async function fetchJSON (url) {
-  const response = await fetch(proxyurl + dataurl + url);
-  return await response.json();
-}
+const statesLayer = new ZoomShowHide().addTo(map);
 
-const statesLayer = L.geoJSON(null, {
-  style: function (feature) {
-    // Set the style based on the number of students
-    return {
-      // choropleth map style
-      fillColor: getColor(feature.properties[studentsCountAttr]),
-      color: 'white',
-      /* //old variant - no choropleth map
+const states50m = L.geoJSON(null, {
+  style: stateStyle
+});
+states50m.max_zoom = 5;
+statesLayer.addLayer(states50m);
+
+const states10m = L.geoJSON(null, {
+  style: stateStyle
+});
+states10m.min_zoom = 6;
+statesLayer.addLayer(states10m);
+
+fetch(states50mSource)
+  .then(response => response.json())
+  .then(data => {
+    states50m.addData(data);
+    addLayerInteraction(states50m);
+  });
+
+fetch(states10mSource)
+  .then(response => response.json())
+  .then(data => {
+    states10m.addData(data);
+    addLayerInteraction(states10m);
+  });
+
+function stateStyle(feature) {
+  // Set the style based on the number of students
+  return {
+    // choropleth map style
+    fillColor: getColor(feature.properties[studentsCountAttr]),
+    color: 'white',
+    /* //old variant - no choropleth map
       fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
       color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
-      weight: 0.8,
-      fillOpacity: 0.9
-    };
-  }
-}).addTo(map);
-
-function loadStates () {
-  const currentZoom = map.getZoom();
-  // console.log(currentZoom);
-  // Choose the appropriate GeoJSON file based on the current zoom level
-  const statesFile = currentZoom < 6 ? lowZoomStates : highZoomStates;
-
-  fetchJSON(statesFile)
-    .then(data => {
-      statesLayer.clearLayers();
-      statesLayer.addData(data);
-      // Add mouseover effect to display state name and student count
-      statesLayer.eachLayer(layer => {
-        layer.on('mouseover', function (e) {
-          const stateName = e.target.feature.properties.NAME;
-          const studentCount = e.target.feature.properties[studentsCountAttr];
-          const toolipOptions = {
-            direction: 'center',
-            sticky: true,
-            offset: L.point(-15, -15)
-          };
-          studentCount > 0
-            ? layer.bindTooltip(stateName + '<br>' + '(' + studentCount + ')', toolipOptions).openTooltip()
-            : layer.bindTooltip(stateName, toolipOptions).openTooltip();
-          // Highlight feature
-          e.target.setStyle({
-            weight: 3,
-            color: '#004619'
-          });
-          e.target.bringToFront();
-        });
-
-        layer.on('mouseout', function (e) {
-          layer.closeTooltip();
-          // Reset feature style
-          statesLayer.resetStyle(e.target);
-        });
-
-        layer.on('click', function (e) {
-          map.fitBounds(e.target.getBounds());
-        });
-      });
-    });
+    weight: 0.8,
+    fillOpacity: 0.9
+  };
 }
 
-map.on('zoomend', loadStates);
+// Add mouseover effect to display state name and student count
+function addLayerInteraction(layer) {
+  layer.eachLayer(sublayer => {
+    sublayer.on('mouseover', function(e) {
+      const stateName = e.target.feature.properties.NAME;
+      const studentCount = e.target.feature.properties[studentsCountAttr];
+      const toolipOptions = {
+        direction: 'top',
+        sticky: true
+      };
+      studentCount > 0
+        ? sublayer.bindTooltip(stateName + '<br>' + '(' + studentCount + ')', toolipOptions).openTooltip()
+        : sublayer.bindTooltip(stateName, toolipOptions).openTooltip();
+      // Highlight feature
+      e.target.setStyle({
+        weight: 3,
+        color: '#004619'
+      });
+      e.target.bringToFront();
+    });
 
-// Initial load of states based on default zoom level
-loadStates();
+    sublayer.on('mouseout', function(e) {
+      sublayer.closeTooltip();
+      layer.resetStyle(e.target);
+    });
+
+    sublayer.on('click', function(e) {
+      map.fitBounds(e.target.getBounds());
+    });
+  });
+}
