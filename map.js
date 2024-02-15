@@ -11,15 +11,15 @@ const highZoomStates = '10m_units_students.geojson';
 const studentsCountAttr = 'all';
 
 function getColor (d) {
-  return d > 100
-    ? '#004619'
-    : d > 30
-      ? '#006925'
-      : d > 10
-        ? '#008c32'
-        : d > 0
-          ? '#00af3f'
-          : '#C6C6C6';
+  /* eslint multiline-ternary: off */
+  /* eslint operator-linebreak: off */
+  /* eslint indent: off */
+  /* eslint no-multi-spaces: off */
+  return d > 100 ? '#004619' :
+         d > 30  ? '#006925' :
+         d > 10  ? '#008c32' :
+         d > 0   ? '#00af3f' :
+                   '#C6C6C6';
 }
 
 // Map init
