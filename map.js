@@ -48,16 +48,17 @@ legend.addTo(map);
 
 const statesLayer = new ZoomShowHide().addTo(map);
 
+const ZOOM_THRESHOLD = 5;
+
 const states50m = L.geoJSON(null, {
   style: stateStyle
 });
-states50m.max_zoom = 5;
 statesLayer.addLayer(states50m);
 
 const states10m = L.geoJSON(null, {
   style: stateStyle
 });
-states10m.min_zoom = 6;
+states10m.min_zoom = ZOOM_THRESHOLD + 1;
 statesLayer.addLayer(states10m);
 
 fetch(states50mSource)
@@ -68,13 +69,22 @@ fetch(states50mSource)
     addLayerInteraction(states50m);
   });
 
-fetch(states10mSource)
-  .then(response => response.json())
-  .then(topology => {
-    const geojson = topojson.feature(topology, topology.objects['10m']);
-    states10m.addData(geojson);
-    addLayerInteraction(states10m);
-  });
+function zoomHandler() {
+  const currentZoom = map.getZoom();
+  if (currentZoom < ZOOM_THRESHOLD) return;
+  map.off('zoomend', zoomHandler);
+  fetch(states10mSource)
+    .then(response => response.json())
+    .then(topology => {
+      const geojson = topojson.feature(topology, topology.objects['10m']);
+      states10m.addData(geojson);
+      addLayerInteraction(states10m);
+      states50m.max_zoom = ZOOM_THRESHOLD;
+      statesLayer.filter();
+    });
+}
+
+map.on('zoomend', zoomHandler);
 
 function stateStyle(feature) {
   // Set the style based on the number of students
