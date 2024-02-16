@@ -13,9 +13,9 @@ function getColor(d) {
   /* eslint indent: off */
   /* eslint no-multi-spaces: off */
   return d > 100 ? '#004619' :
-         d > 30  ? '#006925' :
-         d > 10  ? '#008c32' :
-         d > 0   ? '#00af3f' :
+         d >  30 ? '#006925' :
+         d >  10 ? '#008c32' :
+         d >   0 ? '#00af3f' :
                    '#C6C6C6';
 }
 
