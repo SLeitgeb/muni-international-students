@@ -1,5 +1,5 @@
 /* eslint-disable space-before-function-paren */
-/* global L topojson ZoomShowHide */
+/* global L ZoomShowHide */
 'use strict';
 
 const states50mSource = 'data/50m.topojson';
@@ -64,11 +64,11 @@ const statesLayer = new ZoomShowHide().addTo(map);
 
 const ZOOM_THRESHOLD = 5;
 
-let states50m = '';
+let states50m;
 
 //  statesLayer.addLayer(states50m);
 
-let states10m = '';
+let states10m;
 
 //  states10m.min_zoom = ZOOM_THRESHOLD + 1;
 //  tatesLayer.addLayer(states10m);
@@ -87,11 +87,12 @@ fetch(states50mSource)
       states50m = L.vectorGrid.slicer(json, {
         rendererFactory: L.canvas.tile,
         vectorTileLayerStyles: {
-          countries: function(properties) {
-            return stateStyle(properties);
-          }
+          countries: properties => stateStyle(properties[studentsCountAttr])
         }
-      }).addTo(map);
+      });
+  })
+  .then(() => {
+    statesLayer.addLayer(states50m);
   });
 
 function zoomHandler() {
@@ -104,24 +105,22 @@ function zoomHandler() {
         states10m = L.vectorGrid.slicer(json, {
           rendererFactory: L.canvas.tile,
           vectorTileLayerStyles: {
-            countries: function(properties) {
-              return stateStyle(properties);
-            }
-          },
-          min_zoom: ZOOM_THRESHOLD + 1
-        }).addTo(map);
+            countries: properties => stateStyle(properties[studentsCountAttr])
+          }
+        });
     })
-  .then(() => {
-    states50m.max_zoom = ZOOM_THRESHOLD;
-    statesLayer.filter();
-  });
+    .then(() => {
+      states10m.min_zoom =  ZOOM_THRESHOLD + 1;
+      statesLayer.addLayer(states10m);
+      states50m.max_zoom = ZOOM_THRESHOLD;
+      statesLayer.filter();
+    });
 }
 
 map.on('zoomend', zoomHandler);
 
-function stateStyle(properties) {
+function stateStyle(d) {
   // Set the style based on the number of students
-  var d = properties[studentsCountAttr];
   return {
     // choropleth map style
     // fillColor: getColor(properties[studentsCountAttr]),
@@ -139,7 +138,7 @@ function stateStyle(properties) {
   };
 }
 
-// Add mouseover effect to display state name and student count
+/* Add mouseover effect to display state name and student count
 function addLayerInteraction(layer) {
   layer.eachLayer(sublayer => {
     sublayer.on('mouseover', function(e) {
@@ -170,3 +169,4 @@ function addLayerInteraction(layer) {
     });
   });
 }
+*/
