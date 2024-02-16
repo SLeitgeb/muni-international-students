@@ -30,12 +30,12 @@ data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data
 
 data/50m.topojson: data/aux/50m.geojson
 	@geo2topo -q 1e4 countries=$< |\
-	toposimplify -s 1e-7 \
+	toposimplify -p 1e-4 \
 	> $@
 
 data/10m.topojson: data/aux/10m.geojson
 	@geo2topo -q 1e5 countries=$< |\
-	toposimplify -s 1e-7 \
+	toposimplify -p 1e-4 \
 	> $@
 
 data/aux/%.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv $(STUDENT_DATA)
@@ -57,10 +57,13 @@ data/aux/ne_%_admin_0_map_units.zip: | data/aux
 		https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/$*/cultural/ne_$*_admin_0_map_units.zip
 
 clean:
+	rm -rf $(TARGETS)
+
+clean-all:
 	rm -rf $(TARGETS) data/aux
 
 .SECONDARY:
-.PHONY: help
+.PHONY: help clean clean-all
 
 # Makefile self documentation from https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## Print this help
