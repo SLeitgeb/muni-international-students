@@ -46,30 +46,53 @@ legend.onAdd = function() {
 };
 legend.addTo(map);
 
+/*
+fetch (states10mSource)
+  .then(response => response.json())
+  .then(function(json) {
+      L.vectorGrid.slicer(json, {
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: {
+          sliced: function (properties, zoom) {
+            return stateStyle(properties);
+          }
+        }
+      }).addTo(map);
+  });
+*/
 const statesLayer = new ZoomShowHide().addTo(map);
 
 const ZOOM_THRESHOLD = 5;
 
-const states50m = L.geoJSON(null, {
-  style: stateStyle
-});
-statesLayer.addLayer(states50m);
+let states50m = '';
 
-const states10m = L.geoJSON(null, {
-  style: stateStyle
-});
-states10m.min_zoom = ZOOM_THRESHOLD + 1;
-statesLayer.addLayer(states10m);
+//  statesLayer.addLayer(states50m);
 
+let states10m = '';
+
+//  states10m.min_zoom = ZOOM_THRESHOLD + 1;
+//  tatesLayer.addLayer(states10m);
+
+/*
 function loadTopoToLayer(topology, layer) {
   const geojson = topojson.feature(topology, topology.objects.countries);
-  layer.addData(geojson);
+  layer.options.dataSource = geojson;
   addLayerInteraction(layer);
 }
+*/
 
 fetch(states50mSource)
   .then(response => response.json())
-  .then(topology => loadTopoToLayer(topology, states50m));
+  .then(function(json) {
+      states50m = L.vectorGrid.slicer(json, {
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: {
+          countries: function(properties) {
+            return stateStyle(properties);
+          }
+        }
+      }).addTo(map);
+  });
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
@@ -77,20 +100,36 @@ function zoomHandler() {
   map.off('zoomend', zoomHandler);
   fetch(states10mSource)
     .then(response => response.json())
-    .then(topology => loadTopoToLayer(topology, states10m))
-    .then(() => {
-      states50m.max_zoom = ZOOM_THRESHOLD;
-      statesLayer.filter();
-    });
+    .then(function(json) {
+        states10m = L.vectorGrid.slicer(json, {
+          rendererFactory: L.canvas.tile,
+          vectorTileLayerStyles: {
+            countries: function(properties) {
+              return stateStyle(properties);
+            }
+          },
+          min_zoom: ZOOM_THRESHOLD + 1
+        }).addTo(map);
+    })
+  .then(() => {
+    states50m.max_zoom = ZOOM_THRESHOLD;
+    statesLayer.filter();
+  });
 }
 
 map.on('zoomend', zoomHandler);
 
-function stateStyle(feature) {
+function stateStyle(properties) {
   // Set the style based on the number of students
+  var d = properties[studentsCountAttr];
   return {
     // choropleth map style
-    fillColor: getColor(feature.properties[studentsCountAttr]),
+    // fillColor: getColor(properties[studentsCountAttr]),
+    fillColor: d > 100 ? '#004619' :
+               d > 30  ? '#006925' :
+               d > 10  ? '#008c32' :
+               d > 0   ? '#00af3f' :
+                         '#C6C6C6',
     color: 'white',
     /* //old variant - no choropleth map
       fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
