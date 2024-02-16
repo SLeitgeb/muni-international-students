@@ -87,7 +87,7 @@ fetch(states50mSource)
       states50m = L.vectorGrid.slicer(json, {
         rendererFactory: L.canvas.tile,
         vectorTileLayerStyles: {
-          countries: properties => stateStyle(properties[studentsCountAttr])
+          countries: stateStyle
         }
       });
   })
@@ -105,7 +105,7 @@ function zoomHandler() {
         states10m = L.vectorGrid.slicer(json, {
           rendererFactory: L.canvas.tile,
           vectorTileLayerStyles: {
-            countries: properties => stateStyle(properties[studentsCountAttr])
+            countries: stateStyle
           }
         });
     })
@@ -119,8 +119,9 @@ function zoomHandler() {
 
 map.on('zoomend', zoomHandler);
 
-function stateStyle(d) {
+function stateStyle(properties) {
   // Set the style based on the number of students
+  const d = properties[studentsCountAttr];
   return {
     // choropleth map style
     // fillColor: getColor(properties[studentsCountAttr]),
@@ -130,6 +131,7 @@ function stateStyle(d) {
                d > 0   ? '#00af3f' :
                          '#C6C6C6',
     color: 'white',
+    fill: true,
     /* //old variant - no choropleth map
       fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
       color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
