@@ -1,18 +1,23 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
 #Map {
-  position: absolute;
+    position: absolute;
   background-color: white;
-  top: 0;
-  bottom: 0;
-  width: 99%;
+    top: 0;
+    bottom: 0;
+    width: 100%;
 }
 
 .leaflet-left .leaflet-control-scale {
-	display: inline-block;
-	float: none;
+    display: inline-block;
+    float: none;
 }
 
 .leaflet-control-scale {
-	margin-top: 3.4em;
+    margin-top: 3.4em;
 }
 
 path.leaflet-interactive:focus {
