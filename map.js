@@ -37,10 +37,15 @@ legend.onAdd = function() {
   const grades = [0, 10, 30, 100];
   div.innerHTML += '<h4>Number of students</h4>';
   // loop through our density intervals and generate a label with a colored square for each interval
+  const n = 0;
+  const color = getColor(n);
+  div.innerHTML +=
+    `<i style="background: ${color}"></i> ${n}<br>`;
   for (let i = 0; i < grades.length; i++) {
+    const color = getColor(grades[i] + 1);
+    const legendItem = (grades[i] + 1) + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
     div.innerHTML +=
-      '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
-      (grades[i] + 1) + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+      `<i style="background: ${color}"></i> ${legendItem}`;
   }
   return div;
 };
