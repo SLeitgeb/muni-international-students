@@ -12,11 +12,11 @@ function getColor(d) {
   /* eslint operator-linebreak: off */
   /* eslint indent: off */
   /* eslint no-multi-spaces: off */
-  return d > 100 ? '#004619' :
-         d >  30 ? '#006925' :
-         d >  10 ? '#008c32' :
-         d >   0 ? '#00af3f' :
-                   '#C6C6C6';
+  return d > 100 ? '#19582F' :
+         d >  30 ? '#19773A' :
+         d >  10 ? '#199746' :
+         d >   0 ? '#19B651' :
+                   '#CBCBCB';
 }
 
 // Map init
@@ -91,12 +91,12 @@ function stateStyle(feature) {
   return {
     // choropleth map style
     fillColor: getColor(feature.properties[studentsCountAttr]),
-    color: 'white',
+    color: '#aaa',
     /* //old variant - no choropleth map
       fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
       color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
     weight: 0.8,
-    fillOpacity: 0.9
+    fillOpacity: 1
   };
 }
 
