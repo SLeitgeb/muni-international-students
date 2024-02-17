@@ -38,8 +38,10 @@ data/10m.topojson: data/aux/10m.geojson
 	toposimplify -p 1e-4 \
 	> $@
 
+MERGE_FILES = ""
+
 data/aux/%.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv $(STUDENT_DATA)
-	@mapshaper $< \
+	mapshaper $< $(MERGE_FILES) combine-files -merge-layers \
 		-dissolve fields=ISO_A2_EH where='ISO_A2_EH != -99' copy-fields=NAME \
 		-join data/iso_norm_names.csv keys=ISO_A2_EH,ISO_A2_EH \
 		-each 'NAME = NAME_NORM || NAME' \
@@ -47,6 +49,8 @@ data/aux/%.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv 
 		-filter-fields ISO_A2_EH,NAME,all,phd \
 		-rename-fields ISO_A2=ISO_A2_EH \
 		-o $@
+
+data/aux/10m.geojson: MERGE_FILES = data/10m_artefact_fill.geojson
 
 data/aux/ne_%_admin_0_map_units.shp: data/aux/ne_%_admin_0_map_units.zip | data/aux
 	@unzip -qj $< -d $|
