@@ -84,16 +84,14 @@ function loadTopoToLayer(topology, layer) {
 fetch(states50mSource)
   .then(response => response.json())
   .then(function(json) {
-      states50m = L.vectorGrid.slicer(json, {
-        rendererFactory: L.canvas.tile,
-        vectorTileLayerStyles: {
-          countries: stateStyle
-        }
-      });
-  })
-  .then(() => {
+    states50m = L.vectorGrid.slicer(json, {
+      rendererFactory: L.canvas.tile,
+      vectorTileLayerStyles: {
+        countries: stateStyle
+      }
+    });
     statesLayer.addLayer(states50m);
-  });
+});
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
@@ -102,14 +100,12 @@ function zoomHandler() {
   fetch(states10mSource)
     .then(response => response.json())
     .then(function(json) {
-        states10m = L.vectorGrid.slicer(json, {
-          rendererFactory: L.canvas.tile,
-          vectorTileLayerStyles: {
-            countries: stateStyle
-          }
-        });
-    })
-    .then(() => {
+      states10m = L.vectorGrid.slicer(json, {
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: {
+          countries: stateStyle
+        }
+      });
       states10m.min_zoom =  ZOOM_THRESHOLD + 1;
       statesLayer.addLayer(states10m);
       states50m.max_zoom = ZOOM_THRESHOLD;
@@ -125,18 +121,18 @@ function stateStyle(properties) {
   return {
     // choropleth map style
     // fillColor: getColor(properties[studentsCountAttr]),
+    fill: true,
     fillColor: d > 100 ? '#004619' :
                d > 30  ? '#006925' :
                d > 10  ? '#008c32' :
                d > 0   ? '#00af3f' :
                          '#C6C6C6',
+    fillOpacity: 0.9,
     color: 'white',
-    fill: true,
     /* //old variant - no choropleth map
       fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
       color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
-    weight: 0.8,
-    fillOpacity: 0.9
+    weight: 0.8
   };
 }
 
