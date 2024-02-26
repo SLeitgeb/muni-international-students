@@ -161,6 +161,12 @@ function showTooltip(e, statesXm) {
   highlightedFeature = e.layer.properties.ID;
   // Highlight feature
   statesXm.setFeatureStyle(e.layer.properties.ID, highlightStateStyle(e.layer.properties));
+
+  for (const tileKey in statesXm._vectorTiles) {
+    const tile = statesXm._vectorTiles[tileKey];
+    const features = tile._features[e.layer.properties.ID];
+    if (features) features.feature.bringToFront();
+  }
 }
 
 let highlightedFeature;
