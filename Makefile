@@ -44,9 +44,10 @@ data/aux/%.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv 
 		-join data/iso_norm_names.csv keys=ISO_A2_EH,ISO_A2_EH \
 		-each 'NAME = NAME_NORM || NAME' \
 		-join $(STUDENT_DATA) keys=ISO_A2_EH,ISO_A2 \
-		-filter-fields ISO_A2_EH,NAME,all,phd \
+		-each 'ID = this.id, FID = this.id' \
+		-filter-fields ID,FID,ISO_A2_EH,NAME,all,phd \
 		-rename-fields ISO_A2=ISO_A2_EH \
-		-o $@
+		-o id-field=FID $@
 
 data/aux/ne_%_admin_0_map_units.shp: data/aux/ne_%_admin_0_map_units.zip | data/aux
 	@unzip -qj $< -d $|
