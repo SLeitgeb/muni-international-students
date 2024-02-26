@@ -156,18 +156,17 @@ function showTooltip(e, statesXm) {
   const tooltipContent = studentCount > 0
     ? stateName + '<br>' + '(' + studentCount + ')'
     : stateName;
-    statesXm.bindTooltip(tooltipContent, tooltipOptions).openTooltip(); // if I use bindTooltip for statesXm, _tooltip appears in layer methods, but it is not working and highlighting stops working as well...
-    // Highlight feature
-    clearHighlight(statesXm);
-    highlight = e.layer.properties.ID;
-    statesXm.setFeatureStyle(e.layer.properties.ID, highlightStateStyle(e.layer.properties));
-    // statesXm.bringToFront(); - not working
+  statesXm.bindTooltip(tooltipContent, tooltipOptions).openTooltip(e.latlng);
+  clearHighlight(statesXm);
+  highlightedFeature = e.layer.properties.ID;
+  // Highlight feature
+  statesXm.setFeatureStyle(e.layer.properties.ID, highlightStateStyle(e.layer.properties));
 }
 
-let highlight;
+let highlightedFeature;
 function clearHighlight(statesXm) {
-  if (highlight) {
-    statesXm.resetFeatureStyle(highlight);
+  if (highlightedFeature) {
+    statesXm.resetFeatureStyle(highlightedFeature);
   }
-  highlight = null;
+  highlightedFeature = null;
 }
