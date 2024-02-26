@@ -64,26 +64,22 @@ function loadTopoToLayer(topology, layer) {
 
 fetch(states50mSource)
   .then(response => response.json())
-  .then(function(json) {
-    states50m = L.vectorGrid.slicer(json, {
-      rendererFactory: L.canvas.tile,
+  .then(function(topojson) {
+    states50m = L.vectorGrid.slicer(topojson, {
+      rendererFactory: L.svg.tile,
       vectorTileLayerStyles: {
         countries: stateStyle
       },
       interactive: true,
-      getFeatureId: function(f) {
-        return f.properties.ID;
-      }
+      getFeatureId: f => f.properties.ID
     })
-    .on('mouseover', function(e) {
-      showTooltip(e, states50m);
-    })
-    .on('mouseout', function(e) {
-      states50m.closeTooltip();
-      clearHighlight(states50m);
-    });
+      .on('mouseover', e => showTooltip(e, states50m))
+      .on('mouseout', () => {
+        states50m.closeTooltip();
+        clearHighlight(states50m);
+      });
     statesLayer.addLayer(states50m);
-});
+  });
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
@@ -91,25 +87,21 @@ function zoomHandler() {
   map.off('zoomend', zoomHandler);
   fetch(states10mSource)
     .then(response => response.json())
-    .then(function(json) {
-      states10m = L.vectorGrid.slicer(json, {
-        rendererFactory: L.canvas.tile,
+    .then(function(topojson) {
+      states10m = L.vectorGrid.slicer(topojson, {
+        rendererFactory: L.svg.tile,
         vectorTileLayerStyles: {
           countries: stateStyle
         },
         interactive: true,
-        getFeatureId: function(f) {
-          return f.id;
-        }
+        getFeatureId: f => f.properties.ID
       })
-      .on('mouseover', function(e) {
-        showTooltip(e, states10m);
-      })
-      .on('mouseout', function(e) {
-        states10m.closeTooltip();
-        clearHighlight(states10m);
-      });
-      states10m.min_zoom =  ZOOM_THRESHOLD + 1;
+        .on('mouseover', e => showTooltip(e, states10m))
+        .on('mouseout', () => {
+          states10m.closeTooltip();
+          clearHighlight(states10m);
+        });
+      states10m.min_zoom = ZOOM_THRESHOLD + 1;
       statesLayer.addLayer(states10m);
       states50m.max_zoom = ZOOM_THRESHOLD;
       statesLayer.filter();
@@ -125,33 +117,27 @@ function stateStyle(properties) {
     // choropleth map style
     // fillColor: getColor(properties[studentsCountAttr]),
     fill: true,
-    fillColor: d > 100 ? '#004619' :
-               d > 30  ? '#006925' :
-               d > 10  ? '#008c32' :
-               d > 0   ? '#00af3f' :
-                         '#C6C6C6',
+    fillColor: getColor(d),
     fillOpacity: 0.9,
     color: 'white',
     /* //old variant - no choropleth map
       fillColor: properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
       color: properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
-    weight: 0.8
+    weight: 2
   };
 }
 
-function highlightStateStyle(properties)  {
+function highlightStateStyle(properties) {
   // Set the style based on the number of students
   const d = properties[studentsCountAttr];
   return {
     // choropleth map style
     // fillColor: getColor(properties[studentsCountAttr]),
     fill: true,
-    fillColor: d > 100 ? '#004619' :
-                d > 30  ? '#006925' :
-                d > 10  ? '#008c32' :
-                d > 0   ? '#00af3f' :
-                          '#C6C6C6',
+    fillColor: getColor(d),
     fillOpacity: 0.9,
+    stroke: true,
+    opacity: 1,
     color: '#004619',
     /* //old variant - no choropleth map
       fillColor: properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
@@ -161,13 +147,13 @@ function highlightStateStyle(properties)  {
 }
 
 function showTooltip(e, statesXm) {
-    const stateName = e.layer.properties.NAME;
-    const studentCount = e.layer.properties[studentsCountAttr];
-    const tooltipOptions = {
-      direction: 'top',
-      sticky: true
-    };
-    const tooltipContent = studentCount > 0
+  const stateName = e.layer.properties.NAME;
+  const studentCount = e.layer.properties[studentsCountAttr];
+  const tooltipOptions = {
+    direction: 'top',
+    sticky: true
+  };
+  const tooltipContent = studentCount > 0
     ? stateName + '<br>' + '(' + studentCount + ')'
     : stateName;
     statesXm.bindTooltip(tooltipContent, tooltipOptions).openTooltip(); // if I use bindTooltip for statesXm, _tooltip appears in layer methods, but it is not working and highlighting stops working as well...
