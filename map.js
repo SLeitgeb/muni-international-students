@@ -7,6 +7,8 @@ const states10mSource = 'data/10m.topojson';
 
 const studentsCountAttr = 'all';
 
+const ZOOM_THRESHOLD = -13;
+
 function getColor(d) {
   /* eslint multiline-ternary: off */
   /* eslint operator-linebreak: off */
@@ -21,9 +23,14 @@ function getColor(d) {
 
 // Map init
 const map = L.map('Map', {
-  maxZoom: 8,
-  minZoom: 2
-}).setView([40, 0], 2);
+  maxZoom: -8,
+  minZoom: -15,
+  maxBounds: [
+    [-10018754.17, -16395917.01],
+    [10018754.17, 16395917.01]
+  ],
+  crs: L.CRS.Simple
+}).setView([4443009, 0], -14);
 
 map.attributionControl._attributions = {};
 map.attributionControl.setPrefix();
@@ -79,8 +86,6 @@ function loadTopoJSON(topology, layer, boundaryLayer) {
 }
 
 const statesLayer = new ZoomShowHide().addTo(map);
-
-const ZOOM_THRESHOLD = 5;
 
 const states50m = L.geoJSON(null, {
   style: stateStyle

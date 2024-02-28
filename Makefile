@@ -30,12 +30,12 @@ data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data/aux
 
 data/50m.topojson: data/aux/50m.geojson
 	@geo2topo -q 1e4 countries=$< |\
-	toposimplify -p 1e-4 \
+	toposimplify -p 1e7 \
 	> $@
 
 data/10m.topojson: data/aux/10m.geojson
 	@geo2topo -q 1e5 countries=$< |\
-	toposimplify -p 1e-4 \
+	toposimplify -p 1e6 \
 	> $@
 
 MERGE_FILES = ""
@@ -43,6 +43,8 @@ MERGE_FILES = ""
 data/aux/%.geojson: data/aux/ne_%_admin_0_map_units.shp data/iso_norm_names.csv $(STUDENT_DATA)
 	mapshaper $< $(MERGE_FILES) combine-files -merge-layers \
 		-dissolve fields=ISO_A2_EH where='ISO_A2_EH != -99' copy-fields=NAME \
+		-proj '+proj=wintri +lon_0=0 +lat_1=50.467 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs' \
+		-simplify dp interval=1 \
 		-join data/iso_norm_names.csv keys=ISO_A2_EH,ISO_A2_EH \
 		-each 'NAME = NAME_NORM || NAME' \
 		-join $(STUDENT_DATA) keys=ISO_A2_EH,ISO_A2 \
