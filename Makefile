@@ -14,7 +14,7 @@ all: $(TARGETS)
 data data/aux:
 	@[ -d $@ ] || mkdir -p $@
 
-data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data
+data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data/aux
 	@csvjoin --left --columns citizenship,is_text \
 		<(cat \
 			<(echo "citizenship,all,phd") \
@@ -61,7 +61,7 @@ data/aux/ne_%_admin_0_map_units.zip: | data/aux
 		https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/$*/cultural/ne_$*_admin_0_map_units.zip
 
 clean:
-	rm -rf $(TARGETS)
+	rm -rf $(TARGETS) data/aux/{10,50}m.geojson
 
 clean-all:
 	rm -rf $(TARGETS) data/aux
