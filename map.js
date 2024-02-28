@@ -16,7 +16,7 @@ function getColor(d) {
          d >  30 ? '#19773A' :
          d >  10 ? '#199746' :
          d >   0 ? '#19B651' :
-                   '#CBCBCB';
+                   '#D9D9D9';
 }
 
 // Map init
@@ -51,6 +51,33 @@ legend.onAdd = function() {
 };
 legend.addTo(map);
 
+function stateStyle(feature) {
+  // Set the style based on the number of students
+  return {
+    // choropleth map style
+    fillColor: getColor(feature.properties[studentsCountAttr]),
+    color: '#FAFAFA',
+    /* //old variant - no choropleth map
+      fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
+      color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
+    weight: 0,
+    fillOpacity: 1
+  };
+}
+
+const boundaryStyle = {
+  color: '#FAFAFA',
+  weight: 1.5
+};
+
+function loadTopoJSON(topology, layer, boundaryLayer) {
+  const geojson = topojson.feature(topology, topology.objects.countries);
+  layer.addData(geojson);
+  addLayerInteraction(layer);
+  const boundaries = topojson.mesh(topology, topology.objects.countries, (a, b) => a !== b);
+  boundaryLayer.addData(boundaries);
+}
+
 const statesLayer = new ZoomShowHide().addTo(map);
 
 const ZOOM_THRESHOLD = 5;
@@ -59,22 +86,26 @@ const states50m = L.geoJSON(null, {
   style: stateStyle
 });
 statesLayer.addLayer(states50m);
+const stateBoundaries50m = L.geoJSON(null, {
+  style: boundaryStyle
+});
+statesLayer.addLayer(stateBoundaries50m);
 
 const states10m = L.geoJSON(null, {
   style: stateStyle
 });
 states10m.min_zoom = ZOOM_THRESHOLD + 1;
 statesLayer.addLayer(states10m);
+const stateBoundaries10m = L.geoJSON(null, {
+  style: boundaryStyle
+});
+stateBoundaries10m.min_zoom = ZOOM_THRESHOLD + 1;
+statesLayer.addLayer(stateBoundaries10m);
 
-function loadTopoToLayer(topology, layer) {
-  const geojson = topojson.feature(topology, topology.objects.countries);
-  layer.addData(geojson);
-  addLayerInteraction(layer);
-}
 
 fetch(states50mSource)
   .then(response => response.json())
-  .then(topology => loadTopoToLayer(topology, states50m));
+  .then(topology => loadTopoJSON(topology, states50m, stateBoundaries50m));
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
@@ -82,28 +113,15 @@ function zoomHandler() {
   map.off('zoomend', zoomHandler);
   fetch(states10mSource)
     .then(response => response.json())
-    .then(topology => loadTopoToLayer(topology, states10m))
-    .then(() => {
+    .then(topology => {
+      loadTopoJSON(topology, states10m, stateBoundaries10m);
       states50m.max_zoom = ZOOM_THRESHOLD;
+      stateBoundaries50m.max_zoom = ZOOM_THRESHOLD;
       statesLayer.filter();
     });
 }
 
 map.on('zoomend', zoomHandler);
-
-function stateStyle(feature) {
-  // Set the style based on the number of students
-  return {
-    // choropleth map style
-    fillColor: getColor(feature.properties[studentsCountAttr]),
-    color: '#aaa',
-    /* //old variant - no choropleth map
-      fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
-      color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
-    weight: 0.8,
-    fillOpacity: 1
-  };
-}
 
 // Add mouseover effect to display state name and student count
 function addLayerInteraction(layer) {
@@ -129,6 +147,8 @@ function addLayerInteraction(layer) {
     sublayer.on('mouseout', function(e) {
       sublayer.closeTooltip();
       layer.resetStyle(e.target);
+      stateBoundaries50m.bringToFront();
+      stateBoundaries10m.bringToFront();
     });
 
     sublayer.on('click', function(e) {
