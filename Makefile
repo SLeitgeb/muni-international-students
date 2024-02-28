@@ -58,7 +58,9 @@ data/aux/ne_%_admin_0_map_units.shp: data/aux/ne_%_admin_0_map_units.zip | data/
 
 data/aux/ne_%_admin_0_map_units.zip: | data/aux
 	@wget -q --show-progress -O $@ \
-		https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/$*/cultural/ne_$*_admin_0_map_units.zip
+		https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/$*/cultural/ne_$*_admin_0_map_units.zip || \
+	wget -q --show-progress -O $@ \
+		https://naciscdn.org/naturalearth/$*/cultural/ne_$*_admin_0_map_units.zip
 
 clean:
 	rm -rf $(TARGETS) data/aux/{10,50}m.geojson
