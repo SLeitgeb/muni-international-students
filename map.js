@@ -8,6 +8,21 @@ const states10mSource = 'data/10m.topojson';
 const studentsCountAttr = 'all';
 
 const ZOOM_THRESHOLD = -13;
+const MIN_SIZE = 5;
+const TOOLTIP_OPTIONS = {
+  direction: 'top',
+  sticky: true
+};
+const STROKE_COLOR = '#FAFAFA';
+const COUNTRIES_STROKE_WEIGHT = 0;
+
+function getFeatureTooltip(feature) {
+  const studentCount = feature.properties[studentsCountAttr];
+  const stateName = feature.properties.NAME;
+  return studentCount > 0
+    ? `${stateName}<br>(${studentCount})`
+    : stateName;
+}
 
 function getColor(d) {
   /* eslint multiline-ternary: off */
@@ -63,17 +78,17 @@ function stateStyle(feature) {
   return {
     // choropleth map style
     fillColor: getColor(feature.properties[studentsCountAttr]),
-    color: '#FAFAFA',
+    color: STROKE_COLOR,
     /* //old variant - no choropleth map
       fillColor: feature.properties[studentsCountAttr] > 0 ? '#00AF3F' : '#C6C6C6',
       color: feature.properties[studentsCountAttr] > 0 ? '#007D2C' : '#9E9E9E', */
-    weight: 0,
+    weight: COUNTRIES_STROKE_WEIGHT,
     fillOpacity: 1
   };
 }
 
 const boundaryStyle = {
-  color: '#FAFAFA',
+  color: STROKE_COLOR,
   weight: 1.5
 };
 
@@ -83,13 +98,81 @@ function loadTopoJSON(topology, layer, boundaryLayer) {
   addLayerInteraction(layer);
   const boundaries = topojson.mesh(topology, topology.objects.countries, (a, b) => a !== b);
   boundaryLayer.addData(boundaries);
+  bringDeflatedLayersToFront();
+}
+
+function prepareZoomLayers(feature, layer) {
+  if (!feature.properties.all) return;
+  const bounds = layer.getBounds();
+  const { collapseZoom, collapse } = getCollapseZoom(bounds);
+  if (collapse) addDeflatedFeature(feature, bounds, collapseZoom);
+}
+
+function getCollapseZoom(bounds) {
+  // inspired by L.Deflate plugin
+  // https://github.com/oliverroick/Leaflet.Deflate/blob/master/src/L.Deflate.js
+  for (let zoom = map.getMinZoom(); zoom <= map.getMaxZoom(); zoom++) {
+    const northEastPixels = map.project(bounds.getNorthEast(), zoom);
+    const southWestPixels = map.project(bounds.getSouthWest(), zoom);
+    const width = Math.abs(northEastPixels.x - southWestPixels.x);
+    const height = Math.abs(southWestPixels.y - northEastPixels.y);
+    const collapse = height < MIN_SIZE && width < MIN_SIZE;
+    if (!collapse) {
+      return {
+        collapseZoom: Math.max(zoom, map.getMinZoom()),
+        collapse: zoom !== map.getMinZoom()
+      };
+    }
+  }
+}
+
+function addDeflatedFeature(feature, bounds, zoom) {
+  if (!(zoom in deflatedLayers)) {
+    deflatedLayers[zoom] = L.featureGroup();
+    deflatedLayers[zoom].max_zoom = zoom;
+    statesLayer.addLayer(deflatedLayers[zoom]);
+  }
+  const northEast = bounds.getNorthEast();
+  const southWest = bounds.getSouthWest();
+  const lat = (northEast.lat + southWest.lat) / 2;
+  const lng = (northEast.lng + southWest.lng) / 2;
+  const strokeColor = '#666';
+  const strokeWeight = 3;
+  const featureMarker = L.circleMarker([lat, lng], {
+    color: strokeColor,
+    fill: true,
+    fillColor: getColor(feature.properties[studentsCountAttr]),
+    fillOpacity: 1,
+    weight: strokeWeight
+  }).bindTooltip(getFeatureTooltip(feature), TOOLTIP_OPTIONS);
+  L.setOptions(featureMarker, {
+    strokeColor,
+    strokeWeight
+  });
+  deflatedLayers[zoom].addLayer(featureMarker);
+}
+
+function bringDeflatedLayersToFront() {
+  for (let zoom = map.getZoom(); zoom <= map.getMaxZoom(); zoom++) {
+    if (zoom in deflatedLayers) {
+      deflatedLayers[zoom].bringToFront();
+    }
+  }
 }
 
 const statesLayer = new ZoomShowHide().addTo(map);
+const deflatedLayers = {};
 
 const states50m = L.geoJSON(null, {
-  style: stateStyle
-});
+  style: stateStyle,
+  onEachFeature: (feature, layer) => {
+    prepareZoomLayers(feature, layer);
+    L.setOptions(layer, {
+      strokeColor: STROKE_COLOR,
+      strokeWeight: COUNTRIES_STROKE_WEIGHT
+    });
+  }
+}).bindTooltip(layer => getFeatureTooltip(layer.feature), TOOLTIP_OPTIONS);
 statesLayer.addLayer(states50m);
 const stateBoundaries50m = L.geoJSON(null, {
   style: boundaryStyle
@@ -97,8 +180,14 @@ const stateBoundaries50m = L.geoJSON(null, {
 statesLayer.addLayer(stateBoundaries50m);
 
 const states10m = L.geoJSON(null, {
-  style: stateStyle
-});
+  style: stateStyle,
+  onEachFeature: (_feature, layer) => {
+    L.setOptions(layer, {
+      strokeColor: STROKE_COLOR,
+      strokeWeight: COUNTRIES_STROKE_WEIGHT
+    });
+  }
+}).bindTooltip(layer => getFeatureTooltip(layer.feature), TOOLTIP_OPTIONS);
 states10m.min_zoom = ZOOM_THRESHOLD + 1;
 statesLayer.addLayer(states10m);
 const stateBoundaries10m = L.geoJSON(null, {
@@ -110,7 +199,12 @@ statesLayer.addLayer(stateBoundaries10m);
 
 fetch(states50mSource)
   .then(response => response.json())
-  .then(topology => loadTopoJSON(topology, states50m, stateBoundaries50m));
+  .then(topology => {
+    loadTopoJSON(topology, states50m, stateBoundaries50m);
+    for (const zoom in deflatedLayers) {
+      addLayerInteraction(deflatedLayers[zoom]);
+    }
+  });
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
@@ -130,34 +224,33 @@ map.on('zoomend', zoomHandler);
 
 // Add mouseover effect to display state name and student count
 function addLayerInteraction(layer) {
-  layer.eachLayer(sublayer => {
-    sublayer.on('mouseover', function(e) {
-      const stateName = e.target.feature.properties.NAME;
-      const studentCount = e.target.feature.properties[studentsCountAttr];
-      const toolipOptions = {
-        direction: 'top',
-        sticky: true
-      };
-      studentCount > 0
-        ? sublayer.bindTooltip(stateName + '<br>' + '(' + studentCount + ')', toolipOptions).openTooltip()
-        : sublayer.bindTooltip(stateName, toolipOptions).openTooltip();
-      // Highlight feature
-      e.target.setStyle({
-        weight: 3,
-        color: '#004619'
-      });
-      e.target.bringToFront();
-    });
+  layer.eachLayer(sublayer => addSublayerInteraction(sublayer));
+}
 
-    sublayer.on('mouseout', function(e) {
-      sublayer.closeTooltip();
-      layer.resetStyle(e.target);
-      stateBoundaries50m.bringToFront();
-      stateBoundaries10m.bringToFront();
+function addSublayerInteraction(sublayer) {
+  sublayer.on('mouseover', function(e) {
+    sublayer.openTooltip();
+    // Highlight feature
+    e.target.setStyle({
+      weight: 3,
+      color: '#004619'
     });
+    e.target.bringToFront();
+    bringDeflatedLayersToFront();
+  });
 
-    sublayer.on('click', function(e) {
-      map.fitBounds(e.target.getBounds());
+  sublayer.on('mouseout', function(e) {
+    sublayer.closeTooltip();
+    e.target.setStyle({
+      weight: e.target.options.strokeWeight,
+      color: e.target.options.strokeColor
     });
+    stateBoundaries50m.bringToFront();
+    stateBoundaries10m.bringToFront();
+    bringDeflatedLayersToFront();
+  });
+
+  sublayer.on('click', function(e) {
+    map.fitBounds(e.target.getBounds());
   });
 }
