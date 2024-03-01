@@ -7,12 +7,24 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
 STUDENT_DATA := data/aux/2024-01_citizenship.csv 
-TARGETS := data/50m.topojson data/10m.topojson
+MAP_DATA := data/50m.topojson data/10m.topojson
+RELEASE_FILES := index.html style.css map.js js/leaflet-zoom-show-hide.js $(MAP_DATA)
 
-all: $(TARGETS)
+all: $(MAP_DATA)
 
-data data/aux:
+data data/aux zip js:
 	@[ -d $@ ] || mkdir -p $@
+
+zip/release.zip: $(RELEASE_FILES) | zip
+	zip $@ $(RELEASE_FILES)
+
+js/%: | js
+	cp $< $@
+
+js/leaflet-zoom-show-hide.js: node_modules/leaflet.zoomshowhide/dist/leaflet-zoom-show-hide.js
+
+node_modules/%:
+	npm install
 
 data/aux/%.csv: data/%.xlsx data/is_czso_join.csv | data/aux
 	@csvjoin --left --columns citizenship,is_text \
@@ -65,10 +77,10 @@ data/aux/ne_%_admin_0_map_units.zip: | data/aux
 		https://naciscdn.org/naturalearth/$*/cultural/ne_$*_admin_0_map_units.zip
 
 clean:
-	rm -rf $(TARGETS) data/aux/{10,50}m.geojson
+	rm -rf $(MAP_DATA) data/aux/{10,50}m.geojson
 
 clean-all:
-	rm -rf $(TARGETS) data/aux
+	rm -rf $(MAP_DATA) data/aux
 
 .SECONDARY:
 .PHONY: help clean clean-all
