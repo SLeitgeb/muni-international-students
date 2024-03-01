@@ -249,6 +249,17 @@ function addSublayerInteraction(sublayer) {
   });
 
   sublayer.on('click', function(e) {
-    map.fitBounds(e.target.getBounds());
+    if (e.target.getBounds) {
+      map.flyToBounds(e.target.getBounds(), {
+        animate: true,
+        duration: 0.5
+      });
+    } else {
+      const featureCenter = e.target.getLatLng();
+      map.flyTo(featureCenter, map.getMaxZoom(), {
+        animate: true,
+        duration: 0.75
+      });
+    }
   });
 }
