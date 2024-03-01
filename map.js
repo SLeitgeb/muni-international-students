@@ -16,6 +16,8 @@ const TOOLTIP_OPTIONS = {
 const STROKE_COLOR = '#FAFAFA';
 const COUNTRIES_STROKE_WEIGHT = 0;
 
+const NATURAL_EARTH_ATTRIB = 'Made with Natural Earth.';
+
 function getFeatureTooltip(feature) {
   const studentCount = feature.properties[studentsCountAttr];
   const stateName = feature.properties.NAME;
@@ -48,13 +50,11 @@ const map = L.map('Map', {
   crs: L.CRS.Simple
 }).setView([4443009, 0], -14);
 
-map.attributionControl._attributions = {};
-map.attributionControl.setPrefix();
 map.zoomControl.setPosition('topleft');
 L.control.scale({ imperial: false, maxwidth: 200 }).addTo(map);
 
 // Legend
-const legend = L.control({ position: 'bottomright' });
+const legend = L.control({ position: 'topright' });
 legend.onAdd = function() {
   const div = L.DomUtil.create('div', 'info legend');
   const grades = [0, 10, 30, 100];
@@ -170,7 +170,8 @@ const states50m = L.geoJSON(null, {
       strokeColor: STROKE_COLOR,
       strokeWeight: COUNTRIES_STROKE_WEIGHT
     });
-  }
+  },
+  attribution: NATURAL_EARTH_ATTRIB
 }).bindTooltip(layer => getFeatureTooltip(layer.feature), TOOLTIP_OPTIONS);
 statesLayer.addLayer(states50m);
 const stateBoundaries50m = L.geoJSON(null, {
@@ -185,7 +186,8 @@ const states10m = L.geoJSON(null, {
       strokeColor: STROKE_COLOR,
       strokeWeight: COUNTRIES_STROKE_WEIGHT
     });
-  }
+  },
+  attribution: NATURAL_EARTH_ATTRIB
 }).bindTooltip(layer => getFeatureTooltip(layer.feature), TOOLTIP_OPTIONS);
 states10m.min_zoom = ZOOM_THRESHOLD;
 statesLayer.addLayer(states10m);
