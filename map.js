@@ -7,7 +7,7 @@ const states10mSource = 'data/10m.topojson';
 
 const studentsCountAttr = 'all';
 
-const ZOOM_THRESHOLD = -13;
+const ZOOM_THRESHOLD = -12;
 const MIN_SIZE = 5;
 const TOOLTIP_OPTIONS = {
   direction: 'top',
@@ -40,6 +40,7 @@ function getColor(d) {
 const map = L.map('Map', {
   maxZoom: -8,
   minZoom: -15,
+  zoomSnap: 0.1,
   maxBounds: [
     [-10018754.17, -16395917.01],
     [10018754.17, 16395917.01]
@@ -153,10 +154,8 @@ function addDeflatedFeature(feature, bounds, zoom) {
 }
 
 function bringDeflatedLayersToFront() {
-  for (let zoom = map.getZoom(); zoom <= map.getMaxZoom(); zoom++) {
-    if (zoom in deflatedLayers) {
-      deflatedLayers[zoom].bringToFront();
-    }
+  for (const zoom in deflatedLayers) {
+    deflatedLayers[zoom].bringToFront();
   }
 }
 
@@ -188,14 +187,13 @@ const states10m = L.geoJSON(null, {
     });
   }
 }).bindTooltip(layer => getFeatureTooltip(layer.feature), TOOLTIP_OPTIONS);
-states10m.min_zoom = ZOOM_THRESHOLD + 1;
+states10m.min_zoom = ZOOM_THRESHOLD;
 statesLayer.addLayer(states10m);
 const stateBoundaries10m = L.geoJSON(null, {
   style: boundaryStyle
 });
-stateBoundaries10m.min_zoom = ZOOM_THRESHOLD + 1;
+stateBoundaries10m.min_zoom = ZOOM_THRESHOLD;
 statesLayer.addLayer(stateBoundaries10m);
-
 
 fetch(states50mSource)
   .then(response => response.json())
@@ -208,14 +206,14 @@ fetch(states50mSource)
 
 function zoomHandler() {
   const currentZoom = map.getZoom();
-  if (currentZoom < ZOOM_THRESHOLD) return;
+  if (currentZoom < ZOOM_THRESHOLD - 1) return;
   map.off('zoomend', zoomHandler);
   fetch(states10mSource)
     .then(response => response.json())
     .then(topology => {
       loadTopoJSON(topology, states10m, stateBoundaries10m);
-      states50m.max_zoom = ZOOM_THRESHOLD;
-      stateBoundaries50m.max_zoom = ZOOM_THRESHOLD;
+      states50m.max_zoom = ZOOM_THRESHOLD - 0.1;
+      stateBoundaries50m.max_zoom = ZOOM_THRESHOLD - 0.1;
       statesLayer.filter();
     });
 }
